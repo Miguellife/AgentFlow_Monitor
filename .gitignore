@@ -1,0 +1,31 @@
+node_modules/
+build/
+dist/
+*.log
+config.json
+history.json
+*.key
+
+# 凭据与本地数据
+.env
+.env.*
+!.env.example
+**/auth.json
+**/credentials/*.json
+*.pem
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+
+# 真实抓取的 fixture 一律不入库(只提交人工合成数据)
+test/fixtures/*-real.json
+
+# 本地工具状态与临时上传区
+.superpowers/
+.uploads/
+
+# git worktrees
+.worktrees/
+.vscode/

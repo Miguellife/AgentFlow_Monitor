@@ -1,0 +1,105 @@
+name: Release
+
+# 打 tag(如 v1.0.0)时自动打包 Windows 与 macOS 安装包并上传到对应 GitHub Release。
+# 安装包不签名(个人项目常规做法):
+#   - Windows: 首次运行会触发 SmartScreen 提示,点"更多信息 → 仍要运行"
+#   - macOS:   首次打开会提示"无法验证开发者",右键 → 打开 或
+#              xattr -dr com.apple.quarantine /path/to/AgentFlow-Monitor.dmg
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  windows-package:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            renderer/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install renderer dependencies
+        run: npm --prefix renderer ci
+
+      - name: Build unsigned Windows package
+        run: npm run build:win
+
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: build/*.exe
+          if-no-files-found: error
+
+  mac-package:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: false
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            renderer/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install renderer dependencies
+        run: npm --prefix renderer ci
+
+      - name: Build unsigned macOS package
+        run: npm run build:mac
+
+      - name: Upload macOS installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          path: build/*.dmg
+          if-no-files-found: error
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [windows-package, mac-package]
+    timeout-minutes: 10
+    steps:
+      - name: Download Windows installer
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: release-assets
+
+      - name: Download macOS installer
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-installer
+          path: release-assets
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          generate_release_notes: true

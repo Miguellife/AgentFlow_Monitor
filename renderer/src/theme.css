@@ -1,0 +1,190 @@
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme$='dark'] {
+  color-scheme: dark;
+  --bg-window: rgba(30, 32, 38, 0.94);
+  --bg-card: #252730;
+  --text-primary: #F3F4F6;
+  --text-secondary: #A8B0BD;
+  --text-inverse: #111827;
+  --border: #3A3C45;
+  --shadow-window: 0 12px 34px rgba(0, 0, 0, 0.34);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme$='dark'] body {
+  color: var(--text-primary);
+}
+
+:root[data-theme$='dark'] #app {
+  background: var(--bg-window);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-window);
+}
+
+:root[data-theme$='dark'] .component-surface {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+}
+
+:root[data-theme$='dark'] .fee-card-surface {
+  background: linear-gradient(145deg, rgba(116, 184, 252, 0.09), transparent 52%), var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+:root[data-theme$='dark'] .titlebar,
+:root[data-theme$='dark'] .statusbar {
+  color: var(--text-secondary);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+:root[data-theme$='dark'] .titlebar-title,
+:root[data-theme$='dark'] .component-title,
+:root[data-theme$='dark'] .quota-card-title,
+:root[data-theme$='dark'] .stat-value {
+  color: var(--text-primary);
+}
+
+:root[data-theme$='dark'] .titlebar-btn {
+  color: var(--text-secondary);
+}
+
+:root[data-theme$='dark'] .titlebar-btn:hover,
+:root[data-theme$='dark'] .heatmap-tab:hover,
+:root[data-theme$='dark'] .heatmap-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+:root[data-theme$='dark'] .statusbar {
+  border-top-color: rgba(255, 255, 255, 0.09);
+}
+
+:root[data-theme$='dark'] .content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.20);
+}
+
+:root[data-theme$='dark'] .content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.30);
+}
+
+:root[data-theme$='dark'] .heatmap-tab,
+:root[data-theme$='dark'] .heatmap-mode-btn,
+:root[data-theme$='dark'] .quota-card-plan,
+:root[data-theme$='dark'] .stat-label,
+:root[data-theme$='dark'] .component-subtitle,
+:root[data-theme$='dark'] .embed-empty,
+:root[data-theme$='dark'] .placeholder {
+  color: var(--text-secondary);
+}
+
+:root[data-theme$='dark'] .heatmap-tooltip {
+  background: rgba(20, 22, 28, 0.97);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+}
+
+:root[data-theme$='dark'] .heatmap-tooltip-label {
+  color: rgba(229, 231, 235, 0.76);
+}
+
+:root[data-theme$='dark'] .grid-stack-placeholder > .placeholder-content,
+:root[data-theme$='dark'] .layout-editing .grid-stack-item-content {
+  border-color: rgba(116, 184, 252, 0.46);
+}
+
+/* ======== 亚克力主题:窗口高透透出 DWM 磨砂,卡片 Fluent 半透叠加层 ======== */
+:root[data-theme='acrylic-light'] {
+  color-scheme: light;
+  --bg-window: rgba(255, 255, 255, 0.08);
+  --bg-card: rgba(255, 255, 255, 0.55);
+  --text-secondary: #4B5563;
+  --border: rgba(0, 0, 0, 0.10);
+  --shadow-window: 0 12px 34px rgba(0, 0, 0, 0.18);
+  /* 分层投影:卡片像浮在磨砂底上,避免与窗口底割裂 */
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme='acrylic-dark'] {
+  color-scheme: dark;
+  --bg-window: rgba(20, 22, 28, 0.15);
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --text-primary: #F3F4F6;
+  --text-secondary: #A8B0BD;
+  --text-inverse: #111827;
+  --border: rgba(255, 255, 255, 0.14);
+  --shadow-window: 0 12px 34px rgba(0, 0, 0, 0.34);
+  --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.30);
+}
+
+/* 亚克力亮调窗口底色高透;acrylic-dark 由 data-theme$='dark' 的规则消费上方变量 */
+:root[data-theme='acrylic-light'] #app {
+  background: var(--bg-window);
+  box-shadow: var(--shadow-window);
+}
+
+/* 亮调卡片基础样式无阴影,亚克力亮调显式补上悬浮投影 */
+:root[data-theme='acrylic-light'] .component-surface {
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* 亚克力暗调:在暗色规则之上叠加玻璃内高光与背景模糊 */
+:root[data-theme='acrylic-dark'] .component-surface {
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* 亚克力亮调:窗口底 0.08 近全透,透出的桌面偏灰黑——标题栏/状态栏文字图标改白色 */
+:root[data-theme='acrylic-light'] .titlebar-text,
+:root[data-theme='acrylic-light'] .statusbar {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+:root[data-theme='acrylic-light'] .statusbar {
+  border-top-color: rgba(255, 255, 255, 0.15);
+}
+
+:root[data-theme='acrylic-light'] .titlebar-btn {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+:root[data-theme='acrylic-light'] .titlebar-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+/* ======== 失焦实心化(Accent 不可用时的设计化兜底) ======== */
+/* Accent 生效时主进程不下发焦点通道,dataset.windowActive 不会出现,亚克力保持透明 */
+:root[data-theme='acrylic-light'][data-window-active='false'] {
+  --bg-window: rgba(246, 247, 249, 0.93);
+  --text-secondary: #6B7280;
+}
+
+:root[data-theme='acrylic-light'][data-window-active='false'] .titlebar-text,
+:root[data-theme='acrylic-light'][data-window-active='false'] .statusbar {
+  color: #8A919F;
+}
+
+:root[data-theme='acrylic-light'][data-window-active='false'] .statusbar {
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme='acrylic-light'][data-window-active='false'] .titlebar-btn {
+  color: #5B6372;
+}
+
+:root[data-theme='acrylic-light'][data-window-active='false'] .titlebar-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1F2329;
+}
+
+:root[data-theme='acrylic-dark'][data-window-active='false'] {
+  --bg-window: rgba(30, 32, 38, 0.94);
+}

@@ -1,0 +1,33 @@
+:root {
+  --provider-health-warning: var(--warning, #f59e0b);
+  --provider-health-error: var(--error, #ef4444);
+  --provider-health-loading: var(--accent, #3b82f6);
+  --provider-health-missing: var(--text-muted, #94a3b8);
+}
+
+.status-dot.loading {
+  background: var(--provider-health-loading);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.16);
+}
+
+.status-dot.missing {
+  background: var(--provider-health-missing);
+}
+
+.status-dot.degraded,
+.status-dot.stale {
+  background: var(--provider-health-warning);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
+}
+
+.status-dot.error {
+  background: var(--provider-health-error);
+}
+
+.provider-health-text {
+  min-width: 0;
+  max-width: min(58vw, 280px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

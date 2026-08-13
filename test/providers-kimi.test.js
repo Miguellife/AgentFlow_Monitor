@@ -1,0 +1,96 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+// 注: kimi /usages 真实抓取被过期 access_token 阻断(401 REASON_INVALID_AUTH_TOKEN,见 Task 0 Spike),
+// 本 fixture 依据计划"已验证的事实"文档化结构合成,断言值为计划规定的周/5h 窗口语义。
+const fixture = require('./fixtures/kimi-usages.json');
+const { normalizeKimiUsage, classifyAuthFailure } = require('../src/main/providers/kimi/quota');
+const { readCred, isExpired } = require('../src/main/providers/kimi/auth');
+
+test('normalizeKimiUsage maps weekly + 5h windows from the fixture', () => {
+  const quota = normalizeKimiUsage(fixture);
+  assert.equal(quota.provider, 'kimi');
+  assert.equal(quota.billingMode, 'subscription');
+
+  const weekly = quota.windows.find((w) => w.kind === 'weekly');
+  assert.ok(weekly);
+  assert.deepEqual([weekly.used, weekly.limit, weekly.remaining], [57, 100, 43]);
+  assert.equal(new Date(weekly.resetsAt).toISOString(), '2026-08-06T18:08:07.095Z');
+
+  const fiveH = quota.windows.find((w) => w.kind === '5h');
+  assert.ok(fiveH);
+  assert.deepEqual([fiveH.used, fiveH.limit, fiveH.remaining], [65, 100, 35]);
+  assert.ok(quota.fetchedAt > 0);
+});
+
+test('normalizeKimiUsage tolerates missing limits array', () => {
+  const quota = normalizeKimiUsage({ usage: { limit: 100, used: 10, remaining: 90, resetTime: '2026-08-06T18:08:07.095Z' } });
+  assert.equal(quota.windows.length, 1);
+  assert.equal(quota.windows[0].kind, 'weekly');
+});
+
+function tempCredFile(data) {
+  const p = path.join(os.tmpdir(), 'dsm-kimi-cred-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.json');
+  fs.writeFileSync(p, JSON.stringify(data));
+  return p;
+}
+
+test('readCred reads the kimi credentials structure', () => {
+  const p = tempCredFile({
+    access_token: 'acc', refresh_token: 'ref', expires_at: 1785674374, scope: 'kimi-code'
+  });
+  try {
+    const cred = readCred(p);
+    assert.equal(cred.accessToken, 'acc');
+    assert.equal(cred.refreshToken, 'ref');
+    assert.equal(cred.expiresAt, 1785674374 * 1000);
+    assert.equal(cred.scope, 'kimi-code');
+  } finally {
+    fs.unlinkSync(p);
+  }
+});
+
+test('readCred returns null for missing file', () => {
+  assert.equal(readCred(path.join(os.tmpdir(), 'no-such-cred-' + Date.now() + '.json')), null);
+});
+
+test('isExpired only flags actually-past expiry (read-only cred: no proactive margin)', () => {
+  // 只读模式下由 CLI 刷新回写;剩余<5min 但未过期的 token 仍可用,不能误报过期,
+  // 否则 CLI 刷新空窗期会出现间歇性"已过期"提示
+  assert.equal(isExpired({ expiresAt: Date.now() + 60 * 1000 }), false);
+  assert.equal(isExpired({ expiresAt: Date.now() - 1000 }), true);
+  assert.equal(isExpired({ expiresAt: Date.now() + 10 * 60 * 1000 }), false);
+  assert.equal(isExpired({ expiresAt: null }), false);
+});
+
+test('kimi credential access is read-only (CLI owns refresh; proactive refresh raced the CLI)', () => {
+  const quotaSource = fs.readFileSync(path.resolve(__dirname, '../src/main/providers/kimi/quota.js'), 'utf8');
+  const authSource = fs.readFileSync(path.resolve(__dirname, '../src/main/providers/kimi/auth.js'), 'utf8');
+  assert.match(quotaSource, /readCred\(\)/);
+  assert.doesNotMatch(quotaSource, /ensureFresh|refreshCred/);
+  // refresh_token 一次性轮换:任何主动刷新成功都会作废 CLI 内存中的旧 RT
+  assert.doesNotMatch(authSource, /refreshCred|writeCredentialAtomic|oauth\/token/);
+});
+
+test('classifyAuthFailure: CLI 刷新空窗的 401 不算过期,真过期才算', () => {
+  const used = { accessToken: 'old-token', expiresAt: Date.now() - 1000 };
+  // 文件 token 已换新(CLI 刚轮转回写)→ 空窗,下轮自愈
+  assert.equal(classifyAuthFailure(used, { accessToken: 'new-token', expiresAt: Date.now() + 3600e3 }), 'rotating');
+  // 文件 token 相同但仍未过期(边界撞车)→ 空窗
+  assert.equal(classifyAuthFailure(used, { accessToken: 'old-token', expiresAt: Date.now() + 60e3 }), 'rotating');
+  // 文件读不出(mid-write)→ 空窗
+  assert.equal(classifyAuthFailure(used, null), 'rotating');
+  // 文件 token 也真过期(CLI 长时间未运行)→ 真过期,显示"已过期"是准确的
+  assert.equal(classifyAuthFailure(used, { accessToken: 'old-token', expiresAt: Date.now() - 5000 }), 'expired');
+});
+
+test('空窗错误消息不触发 scheduler 的认证错误判定(不闪"已过期"卡片)', () => {
+  const { isAuthError } = require('../src/main/core/scheduler');
+  assert.equal(isAuthError(new Error('Kimi 凭证刷新中,下个周期自动恢复')), false);
+  const quotaSource = fs.readFileSync(path.resolve(__dirname, '../src/main/providers/kimi/quota.js'), 'utf8');
+  // 401 时必须复核凭证文件区分空窗/真过期
+  assert.match(quotaSource, /classifyAuthFailure\(cred, readCred\(\)\)/);
+});
