@@ -29,3 +29,4 @@ test/fixtures/*-real.json
 # git worktrees
 .worktrees/
 .vscode/
+.trae/
